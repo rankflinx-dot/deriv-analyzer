@@ -22,6 +22,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import kotlin.math.min
@@ -104,8 +105,18 @@ class FloatingService : Service() {
             setPadding(dp(12), 0, dp(6), 0)
             setBackgroundColor(0xFF191F2B.toInt())
         }
+        val logo = ImageView(overlayContext).apply {
+            setImageResource(R.drawable.ic_derivnova_mark)
+            background = GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                intArrayOf(0xFF2878E8.toInt(), 0xFF16B88B.toInt())
+            ).apply { cornerRadius = dp(9).toFloat() }
+            setPadding(dp(5), dp(5), dp(5), dp(5))
+            contentDescription = "DerivNova market chart logo"
+        }
+        header.addView(logo, LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(9) })
         val title = TextView(overlayContext).apply {
-            text = "N   DerivNova Analyzer"
+            text = "DerivNova Analyzer"
             textSize = 14f
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.WHITE)
