@@ -14,6 +14,7 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
+import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
@@ -25,6 +26,7 @@ import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -43,8 +45,16 @@ class FloatingService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        startAsForeground()
-        if (panel == null) showOverlay()
+        try {
+            startAsForeground()
+            if (panel == null) showOverlay()
+        } catch (error: Exception) {
+            Log.e(TAG, "Could not start floating analyzer", error)
+            Toast.makeText(this, "Floating analyzer could not start: ${error.localizedMessage ?: "check overlay permission"}", Toast.LENGTH_LONG).show()
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         return START_STICKY
     }
 
@@ -75,6 +85,7 @@ class FloatingService : Service() {
 
     private fun showOverlay() {
         if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "Allow DerivNova to display over other apps, then tap Start again.", Toast.LENGTH_LONG).show()
             stopSelf()
             return
         }
@@ -206,12 +217,7 @@ class FloatingService : Service() {
         }
         params = layout
         panel = root
-        try {
-            windowManager.addView(root, layout)
-        } catch (_: Exception) {
-            panel = null
-            stopSelf()
-        }
+        windowManager.addView(root, layout)
     }
 
     override fun onDestroy() {
@@ -229,6 +235,7 @@ class FloatingService : Service() {
     }
 
     companion object {
+        private const val TAG = "DerivNovaFloating"
         private const val CHANNEL_ID = "derivnova_floating"
         private const val NOTIFICATION_ID = 17420
         private const val ACTION_STOP = "com.rankflinx.derivnova.STOP_FLOATING"
