@@ -18,6 +18,9 @@ class FakeElement {
     this.options = [];
     this.labels = [];
     this.events = [];
+    this.scrollTop = 0;
+    this.clientHeight = 100;
+    this.scrollHeight = 100;
   }
   get textContent() { return this._textContent; }
   set textContent(value) { this.textContentWrites++; this._textContent = String(value); }
@@ -26,6 +29,7 @@ class FakeElement {
   getAttribute(name) { return this.attributes[name] ?? null; }
   addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); }
   append(...children) { for (const child of children) { child.parentElement = this; this.children.push(child); } }
+  replaceChildren(...children) { this.children = []; this.append(...children); }
   after(sibling) {
     const index = this.parentElement.children.indexOf(this);
     sibling.parentElement = this.parentElement;
@@ -103,5 +107,35 @@ test('floating picker replaces native select and dispatches analyzer change even
   assert.deepEqual(select.events, ['input', 'change']);
   assert.equal(proxy.firstChild.textContent, '250');
   assert.equal(overlay.removed, true);
+});
+
+test('large market lists render in batches and search filters without freezing the picker', () => {
+  const select = new FakeElement('select');
+  select.labels = [{ innerText: 'Market' }];
+  select.value = 'V0';
+  select.options = Array.from({ length: 1200 }, (_, i) => ({
+    value: `V${i}`,
+    textContent: `Volatility ${i} Index`,
+    disabled: false
+  }));
+  const { document } = loadPicker(select);
+  const proxy = select.parentElement.children[select.parentElement.children.indexOf(select) + 1];
+  proxy.click();
+  const overlay = document.documentElement.children.at(-1);
+  const list = overlay.querySelectorAll('div').find(node => node.attributes.role === 'listbox');
+  assert.ok(list);
+  assert.equal(list.querySelectorAll('button').length, 50, 'only the first batch is added initially');
+
+  list.scrollHeight = 200;
+  list.scrollTop = 150;
+  list.dispatchEvent({ type: 'scroll', target: list });
+  assert.equal(list.querySelectorAll('button').length, 100, 'scrolling appends just one more batch');
+
+  const search = overlay.querySelectorAll('input')[0];
+  search.value = 'Volatility 1199 Index';
+  search.dispatchEvent({ type: 'input', target: search });
+  const matches = list.querySelectorAll('button');
+  assert.equal(matches.length, 1, 'search renders only matching option rows');
+  assert.equal(matches[0].textContent, 'Volatility 1199 Index');
 });
 
