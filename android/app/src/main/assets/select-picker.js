@@ -12,8 +12,14 @@
     const proxy = proxies.get(select);
     if (!proxy) return;
     const selected = Array.from(select.options).find(option => option.value === select.value);
-    proxy.firstChild.textContent = selected?.textContent?.trim() || 'Choose an option';
-    proxy.setAttribute('aria-label', `${labelFor(select)}: ${proxy.firstChild.textContent}`);
+    const selectedText = selected?.textContent?.trim() || 'Choose an option';
+    // The document observer calls syncSelects after any child-list update. Writing
+    // textContent unconditionally replaces the text node, which queues another
+    // observer callback forever in WebView when the picker opens. Only write when
+    // the selected option actually changed.
+    if (proxy.firstChild.textContent !== selectedText) proxy.firstChild.textContent = selectedText;
+    const ariaLabel = `${labelFor(select)}: ${selectedText}`;
+    if (proxy.getAttribute('aria-label') !== ariaLabel) proxy.setAttribute('aria-label', ariaLabel);
   };
 
   const sizeProxy = select => {
@@ -143,3 +149,4 @@
     if (event.key === 'Escape' && overlay) { event.preventDefault(); closePicker(); }
   }, true);
 })();
+
