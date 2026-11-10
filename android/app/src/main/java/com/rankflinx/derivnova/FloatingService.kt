@@ -19,6 +19,8 @@ import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.view.Display
+import android.hardware.display.DisplayManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -90,8 +92,12 @@ class FloatingService : Service() {
             return
         }
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE
-        // Native WebView select menus need the same window context as their overlay host.
-        val overlayContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) createWindowContext(overlayType, null) else this
+        // Window contexts must be created from a context associated with the target display.
+        val overlayContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val display = getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
+                ?: throw IllegalStateException("The phone display is unavailable")
+            createDisplayContext(display).createWindowContext(overlayType, null)
+        } else this
         windowManager = overlayContext.getSystemService(WindowManager::class.java)
         val density = overlayContext.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).roundToInt()
