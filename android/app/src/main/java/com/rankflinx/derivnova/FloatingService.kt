@@ -77,15 +77,18 @@ class FloatingService : Service() {
             stopSelf()
             return
         }
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        val density = resources.displayMetrics.density
+        val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE
+        // Native WebView select menus need the same window context as their overlay host.
+        val overlayContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) createWindowContext(overlayType, null) else this
+        windowManager = overlayContext.getSystemService(WindowManager::class.java)
+        val density = overlayContext.resources.displayMetrics.density
         fun dp(v: Int) = (v * density).roundToInt()
-        val screenWidth = resources.displayMetrics.widthPixels
-        val screenHeight = resources.displayMetrics.heightPixels
+        val screenWidth = overlayContext.resources.displayMetrics.widthPixels
+        val screenHeight = overlayContext.resources.displayMetrics.heightPixels
         val width = min(dp(420), screenWidth - dp(24))
         expandedHeight = min(dp(680), screenHeight - dp(120))
 
-        val root = LinearLayout(this).apply {
+        val root = LinearLayout(overlayContext).apply {
             orientation = LinearLayout.VERTICAL
             background = GradientDrawable().apply {
                 setColor(0xFF10141D.toInt())
@@ -95,13 +98,13 @@ class FloatingService : Service() {
             clipToOutline = true
             elevation = dp(12).toFloat()
         }
-        val header = LinearLayout(this).apply {
+        val header = LinearLayout(overlayContext).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), 0, dp(6), 0)
             setBackgroundColor(0xFF191F2B.toInt())
         }
-        val title = TextView(this).apply {
+        val title = TextView(overlayContext).apply {
             text = "N   DerivNova Analyzer"
             textSize = 14f
             typeface = Typeface.DEFAULT_BOLD
@@ -110,7 +113,7 @@ class FloatingService : Service() {
             setPadding(0, 0, dp(8), 0)
         }
         header.addView(title, LinearLayout.LayoutParams(0, dp(46), 1f))
-        val collapse = Button(this).apply {
+        val collapse = Button(overlayContext).apply {
             text = "−"
             textSize = 18f
             setTextColor(Color.WHITE)
@@ -119,7 +122,7 @@ class FloatingService : Service() {
             contentDescription = "Minimize floating analyzer"
         }
         header.addView(collapse, LinearLayout.LayoutParams(dp(44), dp(44)))
-        val close = Button(this).apply {
+        val close = Button(overlayContext).apply {
             text = "×"
             textSize = 20f
             setTextColor(Color.WHITE)
@@ -131,7 +134,7 @@ class FloatingService : Service() {
         header.addView(close, LinearLayout.LayoutParams(dp(44), dp(44)))
         root.addView(header, LinearLayout.LayoutParams(-1, dp(46)))
 
-        val browser = WebView(this).apply {
+        val browser = WebView(overlayContext).apply {
             setBackgroundColor(0xFF10141D.toInt())
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
@@ -140,6 +143,8 @@ class FloatingService : Service() {
             settings.useWideViewPort = true
             settings.loadWithOverviewMode = true
             settings.setSupportZoom(false)
+            isFocusable = true
+            isFocusableInTouchMode = true
             webChromeClient = WebChromeClient()
             webViewClient = WebViewClient()
             loadUrl(ANALYZER_URL)
@@ -183,7 +188,6 @@ class FloatingService : Service() {
             }
         })
 
-        val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE
         val layout = WindowManager.LayoutParams(width, expandedHeight, overlayType, WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN, PixelFormat.TRANSLUCENT).apply {
             gravity = Gravity.TOP or Gravity.START
             x = dp(12)
