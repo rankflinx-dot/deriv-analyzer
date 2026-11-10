@@ -92,11 +92,12 @@ class FloatingService : Service() {
             return
         }
         val overlayType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE
-        // Window contexts must be created from a context associated with the target display.
+        // Create the overlay context directly for the target display. A service context alone
+        // does not have an associated display on Android 11 and later.
         val overlayContext = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val display = getSystemService(DisplayManager::class.java).getDisplay(Display.DEFAULT_DISPLAY)
                 ?: throw IllegalStateException("The phone display is unavailable")
-            createDisplayContext(display).createWindowContext(overlayType, null)
+            createWindowContext(display, overlayType, null)
         } else this
         windowManager = overlayContext.getSystemService(WindowManager::class.java)
         val density = overlayContext.resources.displayMetrics.density
