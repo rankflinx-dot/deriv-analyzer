@@ -29,3 +29,8 @@ Optional account OAuth is not enabled: it requires a Deriv OAuth application cli
 ## Checks
 
 Run `npm test` to check digit extraction, frequency calculations, D-Circle ties, Over/Under and Matches/Differs calculations, categories, indicators and scanner signal thresholds. Validate the extension by loading the folder through Chrome's extension manager. Browser installation testing is not automated by this repository.
+
+## Android floating analyzer
+
+An Android companion can display the hosted analyzer in a draggable overlay while you use Deriv. See [`android/README.md`](android/README.md) for installation steps. Download the installable APK from the latest successful [Android build](https://github.com/rankflinx-dot/deriv-analyzer/actions/workflows/android-apk.yml). Android requires you to grant the app permission to display over other apps.
+
