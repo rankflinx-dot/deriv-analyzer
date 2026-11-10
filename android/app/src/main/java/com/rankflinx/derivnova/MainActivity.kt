@@ -9,6 +9,7 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 
@@ -28,13 +29,14 @@ class MainActivity : Activity() {
             setPadding(dp(24), dp(28), dp(24), dp(28))
             setBackgroundColor(0xFF10141D.toInt())
         }
-        val badge = TextView(this).apply {
-            text = "N"
-            textSize = 25f
-            gravity = Gravity.CENTER
-            setTextColor(0xFFFFFFFF.toInt())
-            setBackgroundColor(0xFF2878E8.toInt())
-            setPadding(dp(8), dp(2), dp(8), dp(2))
+        val badge = ImageView(this).apply {
+            setImageResource(R.drawable.ic_derivnova_mark)
+            background = android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+                intArrayOf(0xFF2878E8.toInt(), 0xFF16B88B.toInt())
+            ).apply { cornerRadius = dp(14).toFloat() }
+            setPadding(dp(9), dp(9), dp(9), dp(9))
+            contentDescription = "DerivNova market chart logo"
         }
         page.addView(badge, LinearLayout.LayoutParams(dp(48), dp(48)))
         page.addView(TextView(this).apply {
