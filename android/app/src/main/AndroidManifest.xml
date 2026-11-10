@@ -8,6 +8,8 @@
 
     <application
         android:allowBackup="false"
+        android:icon="@drawable/ic_derivnova_app"
+        android:roundIcon="@drawable/ic_derivnova_app"
         android:label="DerivNova Floating Analyzer"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
