@@ -13,13 +13,17 @@ class FakeElement {
     this.style = { cssText: '' };
     this.hidden = false;
     this.value = '';
-    this.textContent = '';
+    this._textContent = '';
+    this.textContentWrites = 0;
     this.options = [];
     this.labels = [];
     this.events = [];
   }
+  get textContent() { return this._textContent; }
+  set textContent(value) { this.textContentWrites++; this._textContent = String(value); }
   get firstChild() { return this.children[0] || null; }
   setAttribute(name, value) { this.attributes[name] = value; }
+  getAttribute(name) { return this.attributes[name] ?? null; }
   addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); }
   append(...children) { for (const child of children) { child.parentElement = this; this.children.push(child); } }
   after(sibling) {
@@ -55,7 +59,10 @@ function loadPicker(select) {
     addEventListener() {}
   };
   if (select) body.append(select);
-  class FakeMutationObserver { observe() {} }
+  class FakeMutationObserver {
+    constructor(callback) { this.callback = callback; FakeMutationObserver.instance = this; }
+    observe() {}
+  }
   const context = {
     window: { addEventListener() {} },
     document,
@@ -64,7 +71,7 @@ function loadPicker(select) {
   };
   const source = readFileSync(new URL('../android/app/src/main/assets/select-picker.js', import.meta.url), 'utf8');
   vm.runInNewContext(source, context);
-  return { document, body };
+  return { document, body, observer: FakeMutationObserver.instance };
 }
 
 test('floating picker replaces native select and dispatches analyzer change events', () => {
@@ -72,13 +79,19 @@ test('floating picker replaces native select and dispatches analyzer change even
   select.labels = [{ innerText: 'History' }];
   select.value = '100';
   select.options = ['50', '100', '250'].map(value => ({ value, textContent: value, disabled: false }));
-  const { document } = loadPicker(select);
+  const { document, observer } = loadPicker(select);
 
   assert.match(select.style.cssText, /display:none/);
   assert.equal(select.attributes['aria-hidden'], 'true');
   const proxy = select.parentElement.children[select.parentElement.children.indexOf(select) + 1];
   assert.equal(proxy.className, 'derivnova-select-proxy');
   assert.equal(proxy.firstChild.textContent, '100');
+
+  // A MutationObserver pass must not rewrite the same proxy label. In WebView,
+  // that child-list write would schedule another observer pass indefinitely.
+  const writesBeforeSync = proxy.firstChild.textContentWrites;
+  observer.callback([]);
+  assert.equal(proxy.firstChild.textContentWrites, writesBeforeSync);
 
   proxy.click();
   const overlay = document.documentElement.children.at(-1);
@@ -91,3 +104,4 @@ test('floating picker replaces native select and dispatches analyzer change even
   assert.equal(proxy.firstChild.textContent, '250');
   assert.equal(overlay.removed, true);
 });
+
