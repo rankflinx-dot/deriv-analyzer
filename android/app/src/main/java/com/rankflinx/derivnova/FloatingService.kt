@@ -175,7 +175,15 @@ class FloatingService : Service() {
             isFocusable = true
             isFocusableInTouchMode = true
             webChromeClient = WebChromeClient()
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                    super.onPageFinished(view, url)
+                    if (view != null && url?.startsWith(ANALYZER_URL) == true) {
+                        val picker = assets.open("select-picker.js").bufferedReader().use { it.readText() }
+                        view.evaluateJavascript(picker, null)
+                    }
+                }
+            }
             loadUrl(ANALYZER_URL)
         }
         webView = browser
