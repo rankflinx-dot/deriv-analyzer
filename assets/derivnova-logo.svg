@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">DerivNova Analyzer</title>
+  <defs><linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2878e8"/><stop offset="1" stop-color="#16b88b"/></linearGradient></defs>
+  <rect width="64" height="64" rx="18" fill="url(#brand)"/>
+  <path d="M16 13h13a19 19 0 0 1 0 38H16z" fill="#fff"/>
+  <path d="m22 39 8-10 7 7 11-14m-1 0h-9m9 0v9" fill="none" stroke="#09263d" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
