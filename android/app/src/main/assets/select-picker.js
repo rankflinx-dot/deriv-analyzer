@@ -6,7 +6,16 @@
   let overlay = null;
   const proxies = new WeakMap();
 
-  const labelFor = select => select.labels?.[0]?.innerText?.trim() || 'Choose an option';
+  const labelFor = select => {
+    const label = select.labels?.[0];
+    if (!label) return 'Choose an option';
+    const directText = Array.from(label.childNodes || [])
+      .filter(node => node !== select && !node.classList?.contains('derivnova-select-proxy'))
+      .map(node => node.textContent || '')
+      .join(' ')
+      .trim();
+    return directText || label.getAttribute?.('aria-label') || label.innerText?.trim() || 'Choose an option';
+  };
 
   const updateProxy = select => {
     const proxy = proxies.get(select);
@@ -111,32 +120,49 @@
     const list = document.createElement('div');
     list.setAttribute('role', 'listbox');
     list.style.cssText = 'overflow:auto;overscroll-behavior:contain;padding:6px 8px 10px;';
-    options.forEach(option => {
-      const row = document.createElement('button');
-      row.type = 'button'; row.setAttribute('role', 'option');
-      row.setAttribute('aria-selected', String(option.value === select.value));
-      row.dataset.searchText = option.textContent.toLocaleLowerCase();
-      row.textContent = option.textContent;
-      row.style.cssText = 'display:block;width:100%;text-align:left;padding:12px 12px;border:0;border-radius:8px;background:transparent;color:#f4f6fb;font:inherit;';
-      if (option.value === select.value) row.style.background = '#2878e833';
-      row.addEventListener('click', event => {
-        event.preventDefault();
-        select.value = option.value;
-        select.dispatchEvent(new Event('input', { bubbles: true }));
-        select.dispatchEvent(new Event('change', { bubbles: true }));
-        closePicker();
+    const batchSize = 50;
+    let matchingOptions = options;
+    let renderedCount = 0;
+    const appendNextBatch = () => {
+      const batch = matchingOptions.slice(renderedCount, renderedCount + batchSize);
+      if (!batch.length) return;
+      const rows = batch.map(option => {
+        const row = document.createElement('button');
+        row.type = 'button'; row.setAttribute('role', 'option');
+        row.setAttribute('aria-selected', String(option.value === select.value));
+        row.dataset.searchText = option.textContent.toLocaleLowerCase();
+        row.textContent = option.textContent;
+        row.style.cssText = 'display:block;width:100%;text-align:left;padding:12px 12px;border:0;border-radius:8px;background:transparent;color:#f4f6fb;font:inherit;';
+        if (option.value === select.value) row.style.background = '#2878e833';
+        row.addEventListener('click', event => {
+          event.preventDefault();
+          select.value = option.value;
+          select.dispatchEvent(new Event('input', { bubbles: true }));
+          select.dispatchEvent(new Event('change', { bubbles: true }));
+          closePicker();
+        });
+        return row;
       });
-      list.append(row);
-    });
+      list.append(...rows);
+      renderedCount += batch.length;
+    };
+    const filterOptions = () => {
+      const query = search.value.trim().toLocaleLowerCase();
+      matchingOptions = options.filter(option => option.textContent.toLocaleLowerCase().includes(query));
+      renderedCount = 0;
+      list.replaceChildren();
+      appendNextBatch();
+    };
+    list.addEventListener('scroll', () => {
+      if (list.scrollTop + list.clientHeight >= list.scrollHeight - 80) appendNextBatch();
+    }, { passive: true });
+    appendNextBatch();
     sheet.append(list);
     overlay.append(sheet);
     overlay.addEventListener('click', event => { if (event.target === overlay) closePicker(); });
     document.documentElement.append(overlay);
     if (search) {
-      search.addEventListener('input', () => {
-        const query = search.value.trim().toLocaleLowerCase();
-        list.querySelectorAll('button').forEach(row => { row.hidden = !row.dataset.searchText.includes(query); });
-      });
+      search.addEventListener('input', filterOptions);
       search.focus();
     }
   };
