@@ -163,6 +163,15 @@ class FloatingService : Service() {
         header.addView(close, LinearLayout.LayoutParams(dp(44), dp(44)))
         root.addView(header, LinearLayout.LayoutParams(-1, dp(46)))
 
+        val diagnostic = TextView(overlayContext).apply {
+            text = "DerivNova: loading analyzer…"
+            textSize = 11f
+            setTextColor(0xFFFFD166.toInt())
+            setPadding(dp(10), dp(5), dp(10), dp(5))
+            setBackgroundColor(0xFF202938.toInt())
+        }
+        root.addView(diagnostic, LinearLayout.LayoutParams(-1, dp(30)))
+
         val browser = WebView(overlayContext).apply {
             setBackgroundColor(0xFF10141D.toInt())
             settings.javaScriptEnabled = true
@@ -174,13 +183,49 @@ class FloatingService : Service() {
             settings.setSupportZoom(false)
             isFocusable = true
             isFocusableInTouchMode = true
-            webChromeClient = WebChromeClient()
+            webChromeClient = object : WebChromeClient() {
+                override fun onConsoleMessage(message: android.webkit.ConsoleMessage): Boolean {
+                    Log.e(TAG, "WEB_CONSOLE ${message.messageLevel()}: ${message.message()} (${message.sourceId()}:${message.lineNumber()})")
+                    diagnostic.text = "JavaScript: ${message.message().take(110)}"
+                    diagnostic.setTextColor(0xFFFF7777.toInt())
+                    return true
+                }
+            }
             webViewClient = object : WebViewClient() {
+                override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    Log.i(TAG, "PAGE_STARTED $url")
+                    diagnostic.text = "DerivNova: connecting to analyzer…"
+                    diagnostic.setTextColor(0xFFFFD166.toInt())
+                }
                 override fun onPageFinished(view: WebView?, url: String?) {
                     super.onPageFinished(view, url)
+                    Log.i(TAG, "PAGE_FINISHED $url")
                     if (view != null && url?.startsWith(ANALYZER_URL) == true) {
                         val picker = assets.open("select-picker.js").bufferedReader().use { it.readText() }
                         view.evaluateJavascript(picker, null)
+                        view.evaluateJavascript("(function(){return document.readyState + '; title=' + document.title + '; bodyText=' + ((document.body && document.body.innerText) ? document.body.innerText.length : 0) + '; bodyChildren=' + ((document.body && document.body.children) ? document.body.children.length : 0)})()") { result ->
+                            Log.i(TAG, "PAGE_DIAGNOSTIC $result")
+                            diagnostic.text = "Loaded: $result"
+                            diagnostic.setTextColor(0xFF8BE9A8.toInt())
+                        }
+                    }
+                }
+                override fun onReceivedError(view: WebView?, request: android.webkit.WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                    super.onReceivedError(view, request, error)
+                    if (request?.isForMainFrame == true) {
+                        val detail = "Load error ${error?.errorCode}: ${error?.description}"
+                        Log.e(TAG, "$detail URL=${request.url}")
+                        diagnostic.text = detail.take(140)
+                        diagnostic.setTextColor(0xFFFF7777.toInt())
+                    }
+                }
+                override fun onReceivedHttpError(view: WebView?, request: android.webkit.WebResourceRequest?, response: android.webkit.WebResourceResponse?) {
+                    super.onReceivedHttpError(view, request, response)
+                    Log.e(TAG, "HTTP_ERROR ${response?.statusCode} ${response?.reasonPhrase} URL=${request?.url}")
+                    if (request?.isForMainFrame == true) {
+                        diagnostic.text = "HTTP ${response?.statusCode}: ${response?.reasonPhrase}"
+                        diagnostic.setTextColor(0xFFFF7777.toInt())
                     }
                 }
             }
