@@ -104,8 +104,11 @@ class FloatingService : Service() {
         fun dp(v: Int) = (v * density).roundToInt()
         val screenWidth = overlayContext.resources.displayMetrics.widthPixels
         val screenHeight = overlayContext.resources.displayMetrics.heightPixels
-        val width = min(dp(420), screenWidth - dp(24))
-        expandedHeight = min(dp(680), screenHeight - dp(120))
+        // On phones, keep the overlay clearly floating while ensuring it occupies
+        // more than half of the usable screen area (about 82% width × 72% height).
+        // Clamp to screen bounds so small Android devices remain usable.
+        val width = min((screenWidth * 0.82f).roundToInt(), screenWidth - dp(24))
+        expandedHeight = min((screenHeight * 0.72f).roundToInt(), screenHeight - dp(120))
 
         val root = LinearLayout(overlayContext).apply {
             orientation = LinearLayout.VERTICAL
