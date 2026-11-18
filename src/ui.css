@@ -29,3 +29,7 @@
 .dcircle-green{background:linear-gradient(90deg,#08785c,#35d6a1);box-shadow:0 0 10px #35d6a166}
 .dcircle-total{padding:0 16px 12px;color:#9fb5ca}
 @media(max-width:520px){.dcircle-picker{padding:8px 6px;gap:12px}.dcircle-stage{width:min(78vw,38vh);height:min(78vw,38vh);min-width:220px;min-height:220px}.dcircle-bars{gap:12px;margin-bottom:14px}.dcircle-bar-row{grid-template-columns:70px 1fr 44px;font-size:12px}.dcircle-bar-track{height:12px}}
+
+.log-note{color:var(--muted,#9ba7b7);font-size:12px;line-height:1.5;margin:8px 0 12px}
+#observationRows td{white-space:nowrap;font-size:12px}
+#clearObservationLog{margin-left:auto}
