@@ -24,7 +24,7 @@ function renderObservationLog(){
  const body=$('#observationRows');if(!body)return;body.replaceChildren();
  $('#observationCount').textContent=observationLog.length+' recorded next ticks';
  if(!observationLog.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent='Waiting for at least 20 historical ticks and the next live tick.';tr.append(td);body.append(tr);return;}
- for(const item of observationLog.slice(0,30)){const tr=document.createElement('tr');const values=[item.symbol,new Date(item.epoch*1000).toLocaleString(),item.sample+' ticks',item.hot??'—'+' / '+(item.cold??'—'),(item.over2Rate*100).toFixed(1)+'%',item.actual+' · '+item.outcome,item.lean+(item.leanCorrect===null?'':item.leanCorrect?' ✓':' ✕')];values.forEach(value=>{const td=document.createElement('td');td.textContent=String(value);tr.append(td);});body.append(tr);}
+ for(const item of observationLog.slice(0,30)){const tr=document.createElement('tr');const values=[item.symbol,new Date(item.epoch*1000).toLocaleString(),item.sample+' ticks',(item.hot??'—')+' / '+(item.cold??'—'),(item.over2Rate*100).toFixed(1)+'%',item.actual+' · '+item.outcome,item.lean+(item.leanCorrect===null?'':item.leanCorrect?' ✓':' ✕')];values.forEach(value=>{const td=document.createElement('td');td.textContent=String(value);tr.append(td);});body.append(tr);}
 }
 
 function status(s){const el=$('#status');el.className='status '+s;el.querySelector('span').textContent=s==='connected'?'Live':s==='connecting'?'Connecting':s==='stale'?'Stale':s==='error'?'Error':'Disconnected';}
